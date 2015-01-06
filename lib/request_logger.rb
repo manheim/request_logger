@@ -27,7 +27,7 @@ class RequestLogger
                 " #{request_header_string(env)}; body: #{request_body(env)}")
       status, response_headers, response = @app.call env
     rescue Exception => e
-      @log.error("Exception for #{env['REQUEST_METHOD']} #{env['PATH_INFO']}=> #{e}," +
+      @log.error("Exception for #{env['REQUEST_METHOD']} #{env['PATH_INFO']} => #{e}," +
                  " #{e.backtrace[0..3].join(", ")}")
       raise e
     end
