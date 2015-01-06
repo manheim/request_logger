@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name = 'request_logger' 
   s.summary = 'summary tbd'
-  s.version = "0.0.2"
+  s.version = "0.0.3"
   s.date = '2014-11-04'
   s.authors = ['Robby Ranshous', 'Lindsay Weil']
   s.files = [
