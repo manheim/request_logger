@@ -4,6 +4,7 @@ class RequestLogger
   def initialize app, opts
     @app = app
     @log = opts[:log]
+    @header_filter = opts[:filter] || []
   end
 
   def call env
@@ -40,7 +41,7 @@ class RequestLogger
   end
 
   def request_headers env
-    env.inject({}){|acc, (k,v)| acc[$1] = v if k =~ /^http_(.*)/i; acc}
+    env.inject({}){|acc, (k,v)| acc[$1] = v if (k =~ /^http_(.*)/i) and !(@header_filter.include?(k.to_s)) and !(@header_filter.include?($1.to_s)); acc}
   end
 
   def request_body env

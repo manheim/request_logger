@@ -7,11 +7,12 @@ describe RequestLogger do
   let(:app) { ->(env) { rack_response } }
   let(:log) { double('log', info: true) }
   let(:url) { 'http://some-url.example.org' }
-  let(:env) { Rack::MockRequest.env_for(url, { :input => 'req_body', :method => 'POST',
-                                               'http_test' => 'success' }) }
+  let(:headers) { {'http_test' => 'success'} }
+  let(:env) { Rack::MockRequest.env_for(url, { :input => 'req_body', :method => 'POST' }.merge(headers)) }
   let(:env2) { Rack::MockRequest.env_for(url, {}) }
+  let(:filter) { nil }
   let :middleware do
-    described_class.new(app, log: log)
+    described_class.new(app, log: log, filter: filter)
   end
 
   it 'logs to the info log' do
@@ -51,10 +52,22 @@ describe RequestLogger do
     middleware.call env
   end
 
-  it 'logs request method, path, headers, and body' do
-    expect(log).to receive(:info).with(include(env['REQUEST_METHOD'], env['PATH_INFO'],
-                                               'test => success', 'req_body'))
-    middleware.call env
+  context 'when a filter is not set' do
+    it 'logs request method, path, headers, and body' do
+      expect(log).to receive(:info).with(include(env['REQUEST_METHOD'], env['PATH_INFO'],
+                                                 'test => success', 'req_body'))
+      middleware.call env
+    end
+  end
+
+  context 'when a filter is set' do
+    let(:filter) { ['test2', 'http_test3', 'test4'] }
+    let(:headers) { { 'http_test' => 'success', 'http_test2' => 'test2', 'http_test3' => 'test3', 'test4' => 'test4'}}
+    it 'logs request method, path, headers without filtered items, and body' do
+      expect(log).to receive(:info).with(include(env['REQUEST_METHOD'], env['PATH_INFO'],
+                                                 'test => success', 'req_body'))
+      middleware.call env
+    end
   end
 
   context 'runtime error raised' do
