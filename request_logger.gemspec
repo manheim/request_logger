@@ -9,5 +9,5 @@ Gem::Specification.new do |s|
   ]
   s.require_paths = ["lib"]
   s.add_runtime_dependency "logging"
-  s.add_development_dependency "rspec", ['=2.14.1']
+  s.add_development_dependency "rspec", ['~> 3.1.0']
 end
