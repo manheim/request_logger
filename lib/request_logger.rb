@@ -5,10 +5,10 @@ class RequestLogger
     @app = app
     @log = opts[:log]
     @header_filter = opts[:filter] || []
+    @correlation_header = opts[:correlation_header] || 'correlationId'
   end
 
   def call env
-    # Exception for #{env['REQUEST_METHOD']} #{env['PATH_INFO']}=> #{e}, #{e.backtrace.join(", ")}
     env['correlation_id'] = correlation_id(env)
     Logging.mdc['correlation_id'] = correlation_id(env)
     status, response_headers, response = make_request env
@@ -19,20 +19,20 @@ class RequestLogger
   private
 
   def correlation_id env
-    env['correlation_id'] || SecureRandom.uuid
+    env['correlation_id'] || env["HTTP_#{@correlation_header.upcase}"] || SecureRandom.uuid
   end
 
   def make_request env
     begin
-      @log.info("Request: #{env['REQUEST_METHOD']} #{env['PATH_INFO']}" +
-                " #{request_header_string(env)}; body: #{request_body(env)}")
+      log message: "Request: #{env['REQUEST_METHOD']} #{env['PATH_INFO']}" +
+                " #{request_header_string(env)}; body: #{request_body(env)}"
       status, response_headers, response = @app.call env
     rescue Exception => e
-      @log.error("Exception for #{env['REQUEST_METHOD']} #{env['PATH_INFO']} => #{e}," +
-                 " #{e.backtrace[0..3].join(", ")}")
+      log level: :error, message: "Exception for #{env['REQUEST_METHOD']} #{env['PATH_INFO']} => #{e}," +
+                 " #{e.backtrace[0..3].join(", ")}"
       raise e
     end
-    @log.info("Response: #{status} #{response_headers} #{response}")
+    log message: "Response: #{status} #{response_headers} #{response}"
     [status, response_headers, response]
   end
 
@@ -52,5 +52,11 @@ class RequestLogger
   def read request
     request.body.rewind
     request.body.read
+  end
+
+  def log args
+    if @log && args[:message]
+      @log.__send__(args[:level] || :info, args[:message])
+    end
   end
 end
